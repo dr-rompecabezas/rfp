@@ -1,0 +1,114 @@
+email:
+  enabled: true
+  smtp_host: "live.smtp.mailtrap.io"
+  smtp_port: 587
+  username: "api"
+  password_env: "MAILTRAP_TOKEN"
+  from: "rfp@thinkelearn.com"
+  to: "f.villegas@thinkelearn.com"
+
+sources:
+  - name: "CharityVillage RFPs"
+    url: "https://www.charityvillage.com/jobs/request-proposal/canada"
+    include_keywords: ["request for proposal", "rfp"]
+    exclude_keywords: []
+
+  - name: "Bids&Tenders Portal"
+    url: "https://bids.bidsandtenders.ca/"
+    include_keywords: ["request for proposal", "tender", "bid"]
+    exclude_keywords: ["login", "vendor", "support", "guide", "mailto"]
+
+  - name: "CanadaBuys – Tender Opportunities"
+    url: "https://canadabuys.canada.ca/en/tender-opportunities"
+    include_keywords: ["request for proposal", "call for proposals", "rfp", "tender"]
+    exclude_keywords: ["#wb", "#", "request-contract-history-letter", "chat", "page="]
+
+  - name: "MERX"
+    url: "https://www.merx.com/"
+    include_keywords: ["request for proposal", "rfp", "tender"]
+    exclude_keywords: ["twitter", "login", "resources", "guide", "mailto"]
+
+  - name: "United Way KFLA – Funding"
+    url: "https://www.unitedwaykfla.ca/funding/"
+    include_keywords: ["call for proposals", "request for proposals", "rfp"]
+    exclude_keywords: []
+
+  - name: "United Way East Ontario – Funding/CFPs"
+    url: "https://www.unitedwayeo.ca/"
+    include_keywords: ["call for proposals", "request for proposals", "rfp"]
+    exclude_keywords: []
+
+  - name: "Vantage Point / BC Nonprofit Network"
+    url: "https://thevantagepoint.ca/"
+    include_keywords: ["call for proposals", "request for proposals", "rfp"]
+    exclude_keywords: []
+
+  - name: "Ontario Nonprofit Network"
+    url: "https://theonn.ca/"
+    include_keywords: ["call for proposals", "request for proposals", "rfp", "procurement"]
+    exclude_keywords: []
+
+  - name: "Imagine Canada"
+    url: "https://www.imaginecanada.ca/"
+    include_keywords: ["call for proposals", "request for proposals", "rfp", "grant"]
+    exclude_keywords: []
+
+  - name: "TechSoup Canada"
+    url: "https://www.techsoup.ca/"
+    include_keywords: ["call for proposals", "request for proposals", "rfp"]
+    exclude_keywords: []
+
+  - name: "CCVO / The Nonprofit Chamber"
+    url: "https://www.thenonprofitchamber.org/"
+    include_keywords: ["call for proposals", "request for proposals", "rfp"]
+    exclude_keywords: []
+
+  - name: "United Way Simcoe Muskoka"
+    url: "https://uwsimcoemuskoka.ca/rhinformationpage/"
+    include_keywords: ["call for proposals", "request for proposals", "rfp"]
+    exclude_keywords: []
+
+  - name: "United Way Greater Toronto"
+    url: "https://www.unitedwaygt.org/"
+    include_keywords: ["call for proposals", "request for proposals", "rfp", "funding"]
+    exclude_keywords: []
+
+  - name: "United Way British Columbia"
+    url: "https://uwbc.ca/"
+    include_keywords: ["call for proposals", "request for proposals", "rfp", "funding"]
+    exclude_keywords: []
+
+  - name: "United Way Calgary & Area"
+    url: "https://calgaryunitedway.org/"
+    include_keywords: ["call for proposals", "request for proposals", "rfp"]
+    exclude_keywords: []
+
+  - name: "Vancouver Foundation"
+    url: "https://www.vancouverfoundation.ca/"
+    include_keywords: ["call for proposals", "request for proposals", "rfp", "grant"]
+    exclude_keywords: []
+
+  - name: "Toronto Foundation"
+    url: "https://torontofoundation.ca/"
+    include_keywords: ["call for proposals", "request for proposals", "rfp", "grant"]
+    exclude_keywords: []
+
+  - name: "Hamilton Community Foundation"
+    url: "https://www.hamiltoncommunityfoundation.ca/"
+    include_keywords: ["call for proposals", "request for proposals", "rfp", "grant"]
+    exclude_keywords: []
+
+  - name: "City of Toronto – Tenders"
+    url: "https://www.toronto.ca/business-economy/doing-business-with-the-city/current-possible-opportunities/"
+    include_keywords: ["request for proposal", "rfp", "tender"]
+    exclude_keywords: []
+
+  - name: "City of Hamilton – Bids & Tenders"
+    url: "https://www.hamilton.ca/city-council/bids-tenders"
+    include_keywords: ["request for proposal", "rfp", "tender"]
+    exclude_keywords: []
+
+  - name: "Region of Waterloo – Bids & Tenders"
+    url: "https://www.regionofwaterloo.ca/en/resources/bids-and-tenders.aspx"
+    include_keywords: ["request for proposal", "rfp", "tender"]
+    exclude_keywords: []
