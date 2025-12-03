@@ -7,7 +7,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 import rfp_monitor
-from rfp_monitor import normalize_text, diff_new_items, format_report, trade_drop, llm_filter
+from rfp_monitor import normalize_text, diff_new_items, format_report, trade_drop, llm_filter, llm_model
 
 
 def test_normalize_text_strips_and_lowercases():
@@ -54,3 +54,9 @@ def test_llm_filter_can_be_disabled_via_env(monkeypatch):
     monkeypatch.setenv("OPENAI_API_KEY", "dummy")
     out = llm_filter(items, cfg)
     assert out == items
+
+
+def test_llm_model_prefers_env(monkeypatch):
+    cfg = {"model": "gpt-5-mini", "model_env": "LLM_MODEL"}
+    monkeypatch.setenv("LLM_MODEL", "gpt-xyz")
+    assert llm_model(cfg) == "gpt-xyz"

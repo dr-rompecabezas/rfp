@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from dataclasses import dataclass
 from datetime import datetime
@@ -13,6 +14,7 @@ import yaml
 
 CONFIG_PATH = Path("sources.yaml")
 SEEN_PATH = Path("seen.json")
+LOG_LEVEL_ENV = "LOG_LEVEL"
 TRADE_DROP_WORDS = [
     "asphalt",
     "paving",
@@ -50,6 +52,9 @@ TRUTHY_ENV = {"1", "true", "yes", "on"}
 FALSY_ENV = {"0", "false", "no", "off"}
 
 
+logger = logging.getLogger("rfp_monitor")
+
+
 def env_flag(var_name: str) -> Optional[bool]:
     """Return True/False if env var is set to a recognizable boolean token."""
     raw = os.getenv(var_name)
@@ -70,6 +75,19 @@ def llm_enabled(llm_cfg: Dict[str, Any]) -> bool:
     if env_value is not None:
         return env_value
     return bool(llm_cfg.get("enabled"))
+
+
+def llm_model(llm_cfg: Dict[str, Any]) -> str:
+    """Pick model, allowing an env override (model_env) before YAML."""
+    env_var = llm_cfg.get("model_env", "LLM_MODEL")
+    return os.getenv(env_var) or llm_cfg.get("model", "gpt-5-mini")
+
+
+def configure_logging() -> None:
+    level_name = os.getenv(LOG_LEVEL_ENV, "INFO").upper()
+    level = getattr(logging, level_name, logging.INFO)
+    logging.basicConfig(level=level, format="%(asctime)s %(levelname)s %(message)s")
+    logger.debug("Logging initialized at %s", level_name)
 
 
 @dataclass
@@ -112,7 +130,7 @@ def normalize_text(text: str) -> str:
 
 def fetch_source(source: Source) -> List[Dict[str, str]]:
     """Return list of matching links: [{'title': ..., 'url': ...}, ...]."""
-    print(f"Checking {source.name} …")
+    logger.info("Checking %s …", source.name)
     try:
         resp = requests.get(
             source.url,
@@ -121,7 +139,7 @@ def fetch_source(source: Source) -> List[Dict[str, str]]:
         )
         resp.raise_for_status()
     except Exception as e:
-        print(f"  ! Error fetching {source.url}: {e}")
+        logger.error("Error fetching %s: %s", source.url, e)
         return []
 
     soup = BeautifulSoup(resp.text, "html.parser")
@@ -160,7 +178,7 @@ def fetch_source(source: Source) -> List[Dict[str, str]]:
         if m["url"] not in seen_urls:
             seen_urls.add(m["url"])
             unique_matches.append(m)
-    print(f"  Found {len(unique_matches)} candidate links.")
+    logger.info("  Found %d candidate links.", len(unique_matches))
     return unique_matches
 
 
@@ -179,22 +197,26 @@ def diff_new_items(
 
 def llm_filter(items: List[Dict[str, str]], llm_cfg: Dict[str, Any]) -> List[Dict[str, str]]:
     api_key_env = llm_cfg.get("api_key_env", "OPENAI_API_KEY")
-    model = llm_cfg.get("model", "gpt-4o-mini")
+    model = llm_model(llm_cfg)
     rationale = llm_cfg.get("rationale", False)
     if not llm_enabled(llm_cfg):
+        logger.info("LLM disabled via config/env; skipping LLM filtering.")
         return items
 
     api_key = os.getenv(api_key_env)
     if not api_key:
+        logger.info("No API key found in env %s; skipping LLM filtering.", api_key_env)
         return items
 
     try:
         from openai import OpenAI
     except Exception:
-        print("OpenAI SDK not available; skipping LLM filtering.")
+        logger.warning("OpenAI SDK not available; skipping LLM filtering.")
         return items
 
     client = OpenAI(api_key=api_key)
+
+    logger.info("Running LLM filter with model '%s' on %d items.", model, len(items))
 
     prompt_items = [
         {"index": idx, "title": item["title"], "url": item["url"]}
@@ -225,7 +247,7 @@ def llm_filter(items: List[Dict[str, str]], llm_cfg: Dict[str, Any]) -> List[Dic
         content = resp.output[0].content[0].text  # type: ignore
         data = json.loads(content)
     except Exception as e:
-        print(f"LLM filter error: {e}; skipping LLM filtering.")
+        logger.error("LLM filter error: %s; skipping LLM filtering.", e)
         return items
 
     keep_items: List[Dict[str, str]] = []
@@ -270,7 +292,7 @@ def trade_drop(title: str) -> bool:
 def send_email(config: Dict[str, Any], subject: str, body: str) -> None:
     email_cfg = config.get("email", {})
     if not email_cfg.get("enabled"):
-        print("Email disabled in config; skipping email send.")
+        logger.info("Email disabled in config; skipping email send.")
         return
 
     import smtplib
@@ -285,7 +307,7 @@ def send_email(config: Dict[str, Any], subject: str, body: str) -> None:
     from_addr = email_cfg.get("from") or username
 
     if not password:
-        print("No SMTP password provided (password_env or password); skipping email send.")
+        logger.info("No SMTP password provided (password_env or password); skipping email send.")
         return
 
     msg = EmailMessage()
@@ -299,12 +321,13 @@ def send_email(config: Dict[str, Any], subject: str, body: str) -> None:
             server.starttls()
             server.login(username, password)
             server.send_message(msg)
-        print(f"Email sent to {to_addr}.")
+        logger.info("Email sent to %s.", to_addr)
     except Exception as e:
-        print(f"Error sending email: {e}")
+        logger.error("Error sending email: %s", e)
 
 
 def main() -> None:
+    configure_logging()
     config = load_config()
     seen = load_seen()
     llm_cfg = config.get("llm", {})
@@ -332,7 +355,7 @@ def main() -> None:
     save_seen(seen)
 
     report = format_report(new_items_by_source)
-    print("\n" + report)
+    logger.info("\n%s", report)
 
     # Email summary (optional)
     if new_items_by_source:

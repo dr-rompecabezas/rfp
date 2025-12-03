@@ -7,7 +7,8 @@ Lightweight scraper that polls a curated set of nonprofit/public RFP sources, de
 - Python 3.11+. Create env: `python -m venv .venv && source .venv/bin/activate`.
 - Install deps (pip): `pip install --upgrade pip && pip install beautifulsoup4 pyyaml requests`.
 - Configure sources/email in `sources.yaml` (SMTP password via `MAILTRAP_TOKEN` or inline `password`; optional `username_env` if you want the username from an env var; `from` sets the visible From address).
-- Optional LLM triage: set `llm.enabled: true` in `sources.yaml` (or toggle via `LLM_ENABLED=1/0`) and provide `OPENAI_API_KEY`. The LLM drops construction/maintenance posts and keeps digital/web/edtech/software items; reasons are included when `rationale: true`.
+- Optional LLM triage: set `llm.enabled: true` in `sources.yaml` (or toggle via `LLM_ENABLED=1/0`), pick a model with `llm.model` or `LLM_MODEL`, and provide `OPENAI_API_KEY`. The LLM drops construction/maintenance posts and keeps digital/web/edtech/software items; reasons are included when `rationale: true`.
+- Logging: set `LOG_LEVEL=DEBUG|INFO|WARNING|ERROR` (default INFO); logs now include LLM call attempts and decisions instead of raw `print`s.
 - Run once: `python rfp_monitor.py` (email send is skipped if no password is set).
 
 ## How it works
