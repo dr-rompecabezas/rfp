@@ -10,6 +10,10 @@ from urllib.parse import urljoin, urlparse
 import requests
 from bs4 import BeautifulSoup
 import yaml
+from dotenv import load_dotenv
+
+# Load environment variables from .env file for local development
+load_dotenv()
 
 
 CONFIG_PATH = Path("sources.yaml")
@@ -80,7 +84,7 @@ def llm_enabled(llm_cfg: Dict[str, Any]) -> bool:
 def llm_model(llm_cfg: Dict[str, Any]) -> str:
     """Pick model, allowing an env override (model_env) before YAML."""
     env_var = llm_cfg.get("model_env", "LLM_MODEL")
-    return os.getenv(env_var) or llm_cfg.get("model", "gpt-5-mini")
+    return os.getenv(env_var) or llm_cfg.get("model", "gpt-5-nano")
 
 
 def configure_logging() -> None:
@@ -230,28 +234,30 @@ def llm_filter(items: List[Dict[str, str]], llm_cfg: Dict[str, Any]) -> List[Dic
     )
     user = (
         "Classify each item as keep (true/false) and give a 1-line reason. "
-        "Return JSON list like [{\"index\":0,\"keep\":true,\"reason\":\"...\"}].\n"
+        "Return a JSON object with a 'results' key containing a list like "
+        "{\"results\":[{\"index\":0,\"keep\":true,\"reason\":\"...\"}]}.\n"
         f"Items:\n{prompt_items}"
     )
 
     try:
-        resp = client.responses.create(
+        resp = client.chat.completions.create(
             model=model,
             messages=[
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},
             ],
-            temperature=0,
-            max_output_tokens=400,
+            max_completion_tokens=400,
+            response_format={"type": "json_object"},
         )
-        content = resp.output[0].content[0].text  # type: ignore
+        content = resp.choices[0].message.content or "{}"
         data = json.loads(content)
     except Exception as e:
         logger.error("LLM filter error: %s; skipping LLM filtering.", e)
         return items
 
     keep_items: List[Dict[str, str]] = []
-    for rec in data if isinstance(data, list) else []:
+    results = data.get("results", []) if isinstance(data, dict) else []
+    for rec in results:
         try:
             idx = int(rec.get("index"))
             keep = bool(rec.get("keep"))

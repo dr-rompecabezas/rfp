@@ -57,6 +57,6 @@ def test_llm_filter_can_be_disabled_via_env(monkeypatch):
 
 
 def test_llm_model_prefers_env(monkeypatch):
-    cfg = {"model": "gpt-5-mini", "model_env": "LLM_MODEL"}
+    cfg = {"model": "gpt-5-nano", "model_env": "LLM_MODEL"}
     monkeypatch.setenv("LLM_MODEL", "gpt-xyz")
     assert llm_model(cfg) == "gpt-xyz"

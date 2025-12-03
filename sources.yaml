@@ -11,7 +11,7 @@ llm:
   enabled: false
   enabled_env: "LLM_ENABLED"  # set to 0/false/off to force-disable, 1/true/on to force-enable
   api_key_env: "OPENAI_API_KEY"
-  model: "gpt-5-mini"
+  model: "gpt-5-nano"
   rationale: true  # include a short reason when LLM filtering is enabled
 
 sources:
