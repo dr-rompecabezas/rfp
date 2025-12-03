@@ -120,15 +120,16 @@ sources:
     include_keywords: ["call for proposals", "request for proposals", "rfp", "grant"]
     exclude_keywords: []
 
-  - name: "City of Toronto – Tenders"
-    url: "https://www.toronto.ca/business-economy/doing-business-with-the-city/current-possible-opportunities/"
-    include_keywords: ["request for proposal", "rfp", "tender"]
-    exclude_keywords: []
+  # Disabled sources (404 errors as of December 2025)
+  # - name: "City of Toronto – Tenders"
+  #   url: "https://www.toronto.ca/business-economy/doing-business-with-the-city/current-possible-opportunities/"
+  #   include_keywords: ["request for proposal", "rfp", "tender"]
+  #   exclude_keywords: []
 
-  - name: "City of Hamilton – Bids & Tenders"
-    url: "https://www.hamilton.ca/city-council/bids-tenders"
-    include_keywords: ["request for proposal", "rfp", "tender"]
-    exclude_keywords: []
+  # - name: "City of Hamilton – Bids & Tenders"
+  #   url: "https://www.hamilton.ca/city-council/bids-tenders"
+  #   include_keywords: ["request for proposal", "rfp", "tender"]
+  #   exclude_keywords: []
 
   - name: "City of Burlington – Bids & Tenders"
     url: "https://burlington.bidsandtenders.ca/Module/Tenders/en"
@@ -140,7 +141,7 @@ sources:
     include_keywords: ["request for proposal", "rfp", "tender", "bid"]
     exclude_keywords: []
 
-  - name: "Region of Waterloo – Bids & Tenders"
-    url: "https://www.regionofwaterloo.ca/en/resources/bids-and-tenders.aspx"
-    include_keywords: ["request for proposal", "rfp", "tender"]
-    exclude_keywords: []
+  # - name: "Region of Waterloo – Bids & Tenders"
+  #   url: "https://www.regionofwaterloo.ca/en/resources/bids-and-tenders.aspx"
+  #   include_keywords: ["request for proposal", "rfp", "tender"]
+  #   exclude_keywords: []

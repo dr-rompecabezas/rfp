@@ -1,3 +1,4 @@
+import argparse
 import json
 import logging
 import os
@@ -175,10 +176,27 @@ def fetch_source(source: Source) -> List[Dict[str, str]]:
 
         matches.append({"title": title, "url": href})
 
+    # Filter out low-quality navigation links
+    filtered_matches = []
+    for m in matches:
+        url_lower = m["url"].lower()
+        # Skip navigation/UI links
+        if any(skip in url_lower for skip in [
+            "/login", "/create", "/vendor/", "/français",
+            "bidsandtenders.ca/#", "javascript:",
+            "/home/bidshomepage", "/contact-", "/privacy", "/terms",
+            "/supplier", "/buyer", "/plans", "/demo", "/subscribe"
+        ]):
+            continue
+        filtered_matches.append(m)
+
+    if len(matches) != len(filtered_matches):
+        logger.debug("  Filtered out %d navigation links", len(matches) - len(filtered_matches))
+
     # Deduplicate by URL
     seen_urls = set()
     unique_matches = []
-    for m in matches:
+    for m in filtered_matches:
         if m["url"] not in seen_urls:
             seen_urls.add(m["url"])
             unique_matches.append(m)
@@ -193,6 +211,8 @@ def diff_new_items(
 ) -> List[Dict[str, str]]:
     known_urls = set(seen.get(source.name, []))
     new_items = [item for item in items if item["url"] not in known_urls]
+    logger.debug("  Deduplication: %d current, %d previously seen, %d new",
+                 len(items), len(known_urls), len(new_items))
     if new_items:
         all_urls = list(known_urls.union({item["url"] for item in new_items}))
         seen[source.name] = all_urls
@@ -200,6 +220,11 @@ def diff_new_items(
 
 
 def llm_filter(items: List[Dict[str, str]], llm_cfg: Dict[str, Any]) -> List[Dict[str, str]]:
+    # Skip LLM entirely if no items to process
+    if not items:
+        logger.debug("Skipping LLM filter: no items to process")
+        return items
+
     api_key_env = llm_cfg.get("api_key_env", "OPENAI_API_KEY")
     model = llm_model(llm_cfg)
     rationale = llm_cfg.get("rationale", False)
@@ -333,8 +358,19 @@ def send_email(config: Dict[str, Any], subject: str, body: str) -> None:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description='Monitor RFP sources')
+    parser.add_argument('--force-refresh', action='store_true',
+                       help='Ignore seen cache and process all items')
+    args = parser.parse_args()
+
     configure_logging()
     config = load_config()
+
+    # Handle force refresh
+    if args.force_refresh:
+        logger.info("Force refresh enabled: ignoring seen cache")
+        SEEN_PATH.unlink(missing_ok=True)
+
     seen = load_seen()
     llm_cfg = config.get("llm", {})
 
@@ -354,9 +390,11 @@ def main() -> None:
     for source in sources:
         items = fetch_source(source)
         new_items = diff_new_items(source, items, seen)
-        filtered = llm_filter(new_items, llm_cfg)
+        # Only run LLM filter if there are new items
         if new_items:
-            new_items_by_source[source.name] = filtered
+            filtered = llm_filter(new_items, llm_cfg)
+            if filtered:
+                new_items_by_source[source.name] = filtered
 
     save_seen(seen)
 
