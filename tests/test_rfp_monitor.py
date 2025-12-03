@@ -7,7 +7,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 import rfp_monitor
-from rfp_monitor import normalize_text, diff_new_items, format_report
+from rfp_monitor import normalize_text, diff_new_items, format_report, trade_drop, llm_filter
 
 
 def test_normalize_text_strips_and_lowercases():
@@ -34,3 +34,23 @@ def test_format_report_handles_results(monkeypatch):
     assert "Item" in report
     assert "https://x.com" in report
     assert "2024-01-01 12:30" in report
+
+
+def test_trade_drop_detects_construction():
+    assert trade_drop("Road Repair Service") is True
+    assert trade_drop("Web Portal Development") is False
+
+
+def test_llm_filter_is_noop_when_disabled():
+    items = [{"title": "Portal build", "url": "https://x.com"}]
+    out = llm_filter(items, {"enabled": False})
+    assert out == items
+
+
+def test_llm_filter_can_be_disabled_via_env(monkeypatch):
+    items = [{"title": "Portal build", "url": "https://x.com"}]
+    cfg = {"enabled": True, "enabled_env": "LLM_ENABLED", "api_key_env": "OPENAI_API_KEY"}
+    monkeypatch.setenv("LLM_ENABLED", "0")
+    monkeypatch.setenv("OPENAI_API_KEY", "dummy")
+    out = llm_filter(items, cfg)
+    assert out == items

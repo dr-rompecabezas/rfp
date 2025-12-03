@@ -7,6 +7,13 @@ email:
   from: "rfp@thinkelearn.com"
   to: "f.villegas@thinkelearn.com"
 
+llm:
+  enabled: false
+  enabled_env: "LLM_ENABLED"  # set to 0/false/off to force-disable, 1/true/on to force-enable
+  api_key_env: "OPENAI_API_KEY"
+  model: "gpt-5-mini"
+  rationale: true  # include a short reason when LLM filtering is enabled
+
 sources:
   - name: "CharityVillage RFPs"
     url: "https://www.charityvillage.com/jobs/request-proposal/canada"
@@ -14,7 +21,7 @@ sources:
     exclude_keywords: []
 
   - name: "Bids&Tenders Portal"
-    url: "https://bids.bidsandtenders.ca/"
+    url: "https://www.bidsandtenders.com/bid-opportunities/"
     include_keywords: ["request for proposal", "tender", "bid"]
     exclude_keywords: ["login", "vendor", "support", "guide", "mailto"]
 
@@ -24,9 +31,24 @@ sources:
     exclude_keywords: ["#wb", "#", "request-contract-history-letter", "chat", "page="]
 
   - name: "MERX"
-    url: "https://www.merx.com/"
+    url: "https://www.merx.com/public/solicitations/open?publishDate=HOURS_24"
     include_keywords: ["request for proposal", "rfp", "tender"]
     exclude_keywords: ["twitter", "login", "resources", "guide", "mailto"]
+
+  - name: "United Way Halton & Hamilton – Feed/Seed Grants"
+    url: "https://uwhh.ca/granting/"
+    include_keywords: ["grant", "application", "call for proposals", "request for proposals", "rfp", "funding"]
+    exclude_keywords: []
+
+  - name: "United Way Halton & Hamilton – Feed Grant"
+    url: "https://uwhh.ca/granting/feed-grant/"
+    include_keywords: ["grant", "application", "call for proposals", "request for proposals", "rfp", "funding"]
+    exclude_keywords: []
+
+  - name: "United Way Halton & Hamilton – Seed Grant"
+    url: "https://uwhh.ca/granting/seed-grant/"
+    include_keywords: ["grant", "application", "call for proposals", "request for proposals", "rfp", "funding"]
+    exclude_keywords: []
 
   - name: "United Way KFLA – Funding"
     url: "https://www.unitedwaykfla.ca/funding/"
@@ -106,6 +128,16 @@ sources:
   - name: "City of Hamilton – Bids & Tenders"
     url: "https://www.hamilton.ca/city-council/bids-tenders"
     include_keywords: ["request for proposal", "rfp", "tender"]
+    exclude_keywords: []
+
+  - name: "City of Burlington – Bids & Tenders"
+    url: "https://burlington.bidsandtenders.ca/Module/Tenders/en"
+    include_keywords: ["request for proposal", "rfp", "tender", "bid"]
+    exclude_keywords: []
+
+  - name: "Halton Region – Bids & Tenders"
+    url: "https://haltonregion.bidsandtenders.ca/Module/Tenders/en"
+    include_keywords: ["request for proposal", "rfp", "tender", "bid"]
     exclude_keywords: []
 
   - name: "Region of Waterloo – Bids & Tenders"

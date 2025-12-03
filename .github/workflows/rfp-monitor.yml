@@ -33,6 +33,7 @@ jobs:
       - name: Run monitor
         env:
           MAILTRAP_TOKEN: ${{ secrets.MAILTRAP_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: python rfp_monitor.py
 
       - name: Upload seen cache

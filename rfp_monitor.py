@@ -3,7 +3,7 @@ import os
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from urllib.parse import urljoin, urlparse
 
 import requests
@@ -13,6 +13,63 @@ import yaml
 
 CONFIG_PATH = Path("sources.yaml")
 SEEN_PATH = Path("seen.json")
+TRADE_DROP_WORDS = [
+    "asphalt",
+    "paving",
+    "plow",
+    "snow removal",
+    "hvac",
+    "plumbing",
+    "flooring",
+    "roof",
+    "roofing",
+    "janitorial",
+    "cleaning",
+    "welding",
+    "fleet",
+    "truck",
+    "bus",
+    "vehicle",
+    "tree removal",
+    "landscaping",
+    "fencing",
+    "doors",
+    "windows",
+    "supplies",
+    "parts",
+    "hardware",
+    "concrete",
+    "demolition",
+    "construction",
+    "road",
+    "pavement",
+]
+
+
+TRUTHY_ENV = {"1", "true", "yes", "on"}
+FALSY_ENV = {"0", "false", "no", "off"}
+
+
+def env_flag(var_name: str) -> Optional[bool]:
+    """Return True/False if env var is set to a recognizable boolean token."""
+    raw = os.getenv(var_name)
+    if raw is None:
+        return None
+    normalized = raw.strip().lower()
+    if normalized in TRUTHY_ENV:
+        return True
+    if normalized in FALSY_ENV:
+        return False
+    return None
+
+
+def llm_enabled(llm_cfg: Dict[str, Any]) -> bool:
+    """Resolve LLM toggle, letting an env var override the YAML setting."""
+    env_var = llm_cfg.get("enabled_env", "LLM_ENABLED")
+    env_value = env_flag(env_var)
+    if env_value is not None:
+        return env_value
+    return bool(llm_cfg.get("enabled"))
 
 
 @dataclass
@@ -91,6 +148,8 @@ def fetch_source(source: Source) -> List[Dict[str, str]]:
             continue
         if exclude and any(k in haystack for k in exclude):
             continue
+        if trade_drop(title):
+            continue
 
         matches.append({"title": title, "url": href})
 
@@ -118,6 +177,73 @@ def diff_new_items(
     return new_items
 
 
+def llm_filter(items: List[Dict[str, str]], llm_cfg: Dict[str, Any]) -> List[Dict[str, str]]:
+    api_key_env = llm_cfg.get("api_key_env", "OPENAI_API_KEY")
+    model = llm_cfg.get("model", "gpt-4o-mini")
+    rationale = llm_cfg.get("rationale", False)
+    if not llm_enabled(llm_cfg):
+        return items
+
+    api_key = os.getenv(api_key_env)
+    if not api_key:
+        return items
+
+    try:
+        from openai import OpenAI
+    except Exception:
+        print("OpenAI SDK not available; skipping LLM filtering.")
+        return items
+
+    client = OpenAI(api_key=api_key)
+
+    prompt_items = [
+        {"index": idx, "title": item["title"], "url": item["url"]}
+        for idx, item in enumerate(items)
+    ]
+    system = (
+        "You triage procurement postings. Keep only opportunities that involve software, web, digital products, "
+        "data/analytics, platforms, portals, LMS, edtech, or technical consulting. "
+        "Drop construction, fleet/vehicles, physical supplies, janitorial, roads, HVAC, plumbing, landscaping, "
+        "hardware-only, or general maintenance."
+    )
+    user = (
+        "Classify each item as keep (true/false) and give a 1-line reason. "
+        "Return JSON list like [{\"index\":0,\"keep\":true,\"reason\":\"...\"}].\n"
+        f"Items:\n{prompt_items}"
+    )
+
+    try:
+        resp = client.responses.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+            temperature=0,
+            max_output_tokens=400,
+        )
+        content = resp.output[0].content[0].text  # type: ignore
+        data = json.loads(content)
+    except Exception as e:
+        print(f"LLM filter error: {e}; skipping LLM filtering.")
+        return items
+
+    keep_items: List[Dict[str, str]] = []
+    for rec in data if isinstance(data, list) else []:
+        try:
+            idx = int(rec.get("index"))
+            keep = bool(rec.get("keep"))
+            reason = rec.get("reason", "")
+        except Exception:
+            continue
+        if 0 <= idx < len(items) and keep:
+            item = dict(items[idx])
+            if rationale and reason:
+                item["reason"] = reason
+            keep_items.append(item)
+    return keep_items
+
+
 def format_report(new_items_by_source: Dict[str, List[Dict[str, str]]]) -> str:
     if not new_items_by_source:
         return "No new RFPs or calls for proposals found today."
@@ -130,8 +256,15 @@ def format_report(new_items_by_source: Dict[str, List[Dict[str, str]]]) -> str:
         lines.append("-" * len(source_name))
         for item in items:
             lines.append(f"- {item['title']}")
+            if "reason" in item:
+                lines.append(f"  Reason: {item['reason']}")
             lines.append(f"  {item['url']}")
     return "\n".join(lines)
+
+
+def trade_drop(title: str) -> bool:
+    hay = normalize_text(title)
+    return any(word in hay for word in TRADE_DROP_WORDS)
 
 
 def send_email(config: Dict[str, Any], subject: str, body: str) -> None:
@@ -174,6 +307,7 @@ def send_email(config: Dict[str, Any], subject: str, body: str) -> None:
 def main() -> None:
     config = load_config()
     seen = load_seen()
+    llm_cfg = config.get("llm", {})
 
     sources_cfg = config["sources"]
     sources = [
@@ -191,8 +325,9 @@ def main() -> None:
     for source in sources:
         items = fetch_source(source)
         new_items = diff_new_items(source, items, seen)
+        filtered = llm_filter(new_items, llm_cfg)
         if new_items:
-            new_items_by_source[source.name] = new_items
+            new_items_by_source[source.name] = filtered
 
     save_seen(seen)
 
