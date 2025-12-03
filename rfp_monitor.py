@@ -220,16 +220,18 @@ def diff_new_items(
 
 
 def llm_filter(items: List[Dict[str, str]], llm_cfg: Dict[str, Any]) -> List[Dict[str, str]]:
-    # Skip LLM entirely if no items to process
-    if not items:
-        logger.debug("Skipping LLM filter: no items to process")
-        return items
-
     api_key_env = llm_cfg.get("api_key_env", "OPENAI_API_KEY")
     model = llm_model(llm_cfg)
     rationale = llm_cfg.get("rationale", False)
+    
+    # Check if LLM is disabled first (important for tests and config)
     if not llm_enabled(llm_cfg):
         logger.info("LLM disabled via config/env; skipping LLM filtering.")
+        return items
+    
+    # Skip LLM entirely if no items to process (optimization)
+    if not items:
+        logger.debug("Skipping LLM filter: no items to process")
         return items
 
     api_key = os.getenv(api_key_env)
