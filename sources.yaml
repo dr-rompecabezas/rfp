@@ -75,15 +75,17 @@ sources:
     include_keywords: ["call for proposals", "request for proposals", "rfp", "grant"]
     exclude_keywords: []
 
-  - name: "TechSoup Canada"
-    url: "https://www.techsoup.ca/"
-    include_keywords: ["call for proposals", "request for proposals", "rfp"]
-    exclude_keywords: []
+  # Disabled source (403 Forbidden error as of December 2025)
+  # - name: "TechSoup Canada"
+  #   url: "https://www.techsoup.ca/"
+  #   include_keywords: ["call for proposals", "request for proposals", "rfp"]
+  #   exclude_keywords: []
 
-  - name: "CCVO / The Nonprofit Chamber"
-    url: "https://www.thenonprofitchamber.org/"
-    include_keywords: ["call for proposals", "request for proposals", "rfp"]
-    exclude_keywords: []
+  # Disabled source (DNS resolution failure as of December 2025)
+  # - name: "CCVO / The Nonprofit Chamber"
+  #   url: "https://www.thenonprofitchamber.org/"
+  #   include_keywords: ["call for proposals", "request for proposals", "rfp"]
+  #   exclude_keywords: []
 
   - name: "United Way Simcoe Muskoka"
     url: "https://uwsimcoemuskoka.ca/rhinformationpage/"
